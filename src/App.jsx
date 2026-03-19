@@ -98,7 +98,9 @@ export default function App() {
 
           {/* Desktop sidebar + main content */}
           <div className="layout-outer" style={{ maxWidth: 1240, margin: "0 auto", padding: "18px 28px", display: "flex", gap: 20 }}>
-            <Sidebar className="sidebar-desktop" activeCat={activeCat} setActiveCat={setActiveCat} lang={lang} t={t} />
+            <div className="sidebar-desktop">
+              <Sidebar activeCat={activeCat} setActiveCat={setActiveCat} lang={lang} t={t} />
+            </div>
 
             <main style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
