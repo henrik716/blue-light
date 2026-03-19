@@ -1,6 +1,6 @@
 export const T = {
   no: {
-    appTitle: "Geonorge · Blålysetatene",
+    appTitle: "Blålysetatene",
     appSub: "Geografiske datasett for politi, brannvesen og helse",
     search: "Søk etter datasett, etat eller tema…",
     categories: "KATEGORIER",
@@ -17,7 +17,7 @@ export const T = {
     notes: "Merknad",
   },
   en: {
-    appTitle: "Geonorge · Blue Light Services",
+    appTitle: "Blue Light Services",
     appSub: "Geospatial datasets for police, fire and health services",
     search: "Search by dataset name, organisation or theme…",
     categories: "CATEGORIES",
