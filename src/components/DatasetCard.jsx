@@ -49,17 +49,17 @@ export function DatasetCard({ item, lang, color }) {
         </h3>
         <div style={{ display: "flex", gap: 4, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
           {item.access === "open" && (
-            <span style={{ background: "#065F46", color: "#6EE7B7", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+            <span style={{ background: "#065F46", color: "#6EE7B7", fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 20 }}>
               {t.openData}
             </span>
           )}
           {item.access === "restricted" && (
-            <span style={{ background: "rgba(251,191,36,0.15)", color: "#FCD34D", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+            <span style={{ background: "rgba(251,191,36,0.15)", color: "#FCD34D", fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 20 }}>
               {t.restricted}
             </span>
           )}
           {item.access === "contact" && (
-            <span style={{ background: "rgba(248,113,113,0.15)", color: "#FCA5A5", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+            <span style={{ background: "rgba(248,113,113,0.15)", color: "#FCA5A5", fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 20 }}>
               {t.contact}
             </span>
           )}
@@ -69,9 +69,9 @@ export function DatasetCard({ item, lang, color }) {
               style={{
                 background: copied ? "rgba(74,222,128,0.15)" : "rgba(96,165,250,0.15)",
                 color: copied ? "#4EDE80" : "#93C5FD",
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: 600,
-                padding: "2px 7px",
+                padding: "6px 10px",
                 borderRadius: 20,
                 border: "none",
                 cursor: "pointer",
@@ -107,7 +107,7 @@ export function DatasetCard({ item, lang, color }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ fontSize: 11, color, textDecoration: "none", padding: "4px 10px", borderRadius: 6, background: `${color}15`, fontWeight: 500, display: "inline-block" }}
+            style={{ fontSize: 12, color, textDecoration: "none", padding: "8px 12px", borderRadius: 6, background: `${color}15`, fontWeight: 500, display: "inline-block" }}
             onMouseEnter={e => e.currentTarget.style.background = `${color}30`}
             onMouseLeave={e => e.currentTarget.style.background = `${color}15`}
           >

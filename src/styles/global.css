@@ -34,3 +34,51 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Mobile responsive styles */
+@media (max-width: 640px) {
+  .layout-outer {
+    padding: 12px 12px !important;
+    flex-direction: column !important;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sidebar-desktop {
+    display: none;
+  }
+
+  .sidebar-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: flex-start;
+  }
+
+  .sidebar-drawer {
+    width: 260px;
+    height: 100vh;
+    overflow-y: auto;
+    background: #0A1628;
+    padding: 16px 12px;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobile-cat-bar {
+    display: block;
+  }
+}
+
+@media (min-width: 641px) {
+  .sidebar-overlay {
+    display: none !important;
+  }
+
+  .mobile-cat-bar {
+    display: none;
+  }
+}

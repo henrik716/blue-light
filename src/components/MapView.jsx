@@ -59,7 +59,7 @@ function LegendImage({ url }) {
 
 export function MapView({ activeCat, lang, t, search = "" }) {
   const [visibleLayers, setVisibleLayers] = useState(new Set());
-  const [panelExpanded, setPanelExpanded] = useState(true);
+  const [panelExpanded, setPanelExpanded] = useState(window.innerWidth > 640);
   const [wmsLayers, setWmsLayers] = useState({});
   const [validWmsIndices, setValidWmsIndices] = useState(new Set());
   const [isValidating, setIsValidating] = useState(false);
@@ -258,7 +258,7 @@ export function MapView({ activeCat, lang, t, search = "" }) {
   }, [visibleLayers, wmsDatasets, wmsLayers]);
 
   return (
-    <div style={{ height: "calc(100vh - 128px)", position: "relative" }}>
+    <div style={{ height: "calc(100vh - var(--header-h, 128px))", position: "relative" }}>
       {/* Leaflet Map */}
       <div
         id="map-container"
@@ -272,7 +272,7 @@ export function MapView({ activeCat, lang, t, search = "" }) {
           left: 12,
           top: 12,
           bottom: 12,
-          width: panelExpanded ? 320 : 44,
+          width: panelExpanded ? Math.min(320, window.innerWidth - 24) : 44,
           background: "rgba(10, 22, 40, 0.85)",
           backdropFilter: "blur(12px)",
           borderRadius: 12,

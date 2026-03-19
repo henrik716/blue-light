@@ -1,8 +1,10 @@
+import { forwardRef } from 'react';
 import { DATASETS } from '../data/datasets.js';
 
-export function Header({ lang, setLang, search, setSearch, view, setView, t }) {
+export const Header = forwardRef(function Header({ lang, setLang, search, setSearch, view, setView, t, onMenuClick }, ref) {
   return (
     <header
+      ref={ref}
       style={{
         background: "linear-gradient(180deg,#071020 0%,#0A1628 100%)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
@@ -47,6 +49,21 @@ export function Header({ lang, setLang, search, setSearch, view, setView, t }) {
             <p style={{ fontSize: 12, color: "#5A7EA0" }}>{t.appSub}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={onMenuClick}
+              className="mobile-cat-bar"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#60A5FA",
+                cursor: "pointer",
+                fontSize: 20,
+                padding: "6px 8px",
+              }}
+              title="Open categories"
+            >
+              ☰
+            </button>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontFamily: "Syne,sans-serif", fontSize: 24, fontWeight: 800, color: "#60A5FA", lineHeight: 1 }}>
                 {DATASETS.length}
@@ -114,7 +131,7 @@ export function Header({ lang, setLang, search, setSearch, view, setView, t }) {
               borderRadius: 8,
               padding: "9px 34px 9px 32px",
               color: "#E8F0FA",
-              fontSize: 13,
+              fontSize: 16,
               outline: "none",
               fontFamily: "IBM Plex Sans,sans-serif",
             }}
@@ -143,4 +160,4 @@ export function Header({ lang, setLang, search, setSearch, view, setView, t }) {
       </div>
     </header>
   );
-}
+});
