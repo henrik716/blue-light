@@ -1,3 +1,4 @@
+import React from 'react';
 import { CATS } from '../data/categories.js';
 import { T } from '../i18n/translations.js';
 
@@ -10,6 +11,15 @@ export function DatasetCard({ item, lang, color }) {
   const t = T[lang];
   const title = lang === "no" ? item.no : item.en;
   const owner = lang === "no" ? item.ownerNo : item.ownerEn;
+  const [copied, setCopied] = React.useState(false);
+
+  const copyWmsUrl = () => {
+    if (item.wmsUrl) {
+      navigator.clipboard.writeText(item.wmsUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div
@@ -53,10 +63,24 @@ export function DatasetCard({ item, lang, color }) {
               {t.contact}
             </span>
           )}
-          {item.proto && (
-            <span style={{ background: "rgba(96,165,250,0.15)", color: "#93C5FD", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
-              {item.proto}
-            </span>
+          {item.wmsUrl && (
+            <button
+              onClick={copyWmsUrl}
+              style={{
+                background: copied ? "rgba(74,222,128,0.15)" : "rgba(96,165,250,0.15)",
+                color: copied ? "#4EDE80" : "#93C5FD",
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "2px 7px",
+                borderRadius: 20,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              title="Copy WMS service URL"
+            >
+              {copied ? "✓ Copied" : "WMS"}
+            </button>
           )}
         </div>
       </div>

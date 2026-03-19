@@ -1,6 +1,6 @@
 import { DATASETS } from '../data/datasets.js';
 
-export function Header({ lang, setLang, search, setSearch, t }) {
+export function Header({ lang, setLang, search, setSearch, view, setView, t }) {
   return (
     <header
       style={{
@@ -52,6 +52,29 @@ export function Header({ lang, setLang, search, setSearch, t }) {
                 {DATASETS.length}
               </div>
               <div style={{ fontSize: 10, color: "#5A7EA0" }}>{t.datasets}</div>
+            </div>
+            <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, overflow: "hidden" }}>
+              {[
+                { id: "list", icon: "☰", title: "List view" },
+                { id: "map", icon: "🗺", title: "Map view" },
+              ].map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setView(v.id)}
+                  style={{
+                    padding: "6px 12px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    background: view === v.id ? "rgba(96,165,250,0.2)" : "transparent",
+                    color: view === v.id ? "#60A5FA" : "#5A7EA0",
+                    transition: "all 0.15s",
+                  }}
+                  title={v.title}
+                >
+                  {v.icon}
+                </button>
+              ))}
             </div>
             <div style={{ display: "flex", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, overflow: "hidden" }}>
               {["no", "en"].map(l => (
