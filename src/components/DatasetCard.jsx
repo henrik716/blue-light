@@ -1,0 +1,96 @@
+import { CATS } from '../data/categories.js';
+import { T } from '../i18n/translations.js';
+
+function truncate(s, n) {
+  if (!s) return "";
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+export function DatasetCard({ item, lang, color }) {
+  const t = T[lang];
+  const title = lang === "no" ? item.no : item.en;
+  const owner = lang === "no" ? item.ownerNo : item.ownerEn;
+
+  return (
+    <div
+      style={{
+        background: "linear-gradient(135deg,#0F2040 0%,#0A1628 100%)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 10,
+        padding: "15px 17px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 7,
+        transition: "transform 0.15s, box-shadow 0.15s",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${color}33`;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "";
+        e.currentTarget.style.boxShadow = "";
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <h3 style={{ fontFamily: "Syne,sans-serif", fontSize: 13, fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3, flex: 1 }}>
+          {title}
+        </h3>
+        <div style={{ display: "flex", gap: 4, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          {item.access === "open" && (
+            <span style={{ background: "#065F46", color: "#6EE7B7", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+              {t.openData}
+            </span>
+          )}
+          {item.access === "restricted" && (
+            <span style={{ background: "rgba(251,191,36,0.15)", color: "#FCD34D", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+              {t.restricted}
+            </span>
+          )}
+          {item.access === "contact" && (
+            <span style={{ background: "rgba(248,113,113,0.15)", color: "#FCA5A5", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+              {t.contact}
+            </span>
+          )}
+          {item.proto && (
+            <span style={{ background: "rgba(96,165,250,0.15)", color: "#93C5FD", fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 20 }}>
+              {item.proto}
+            </span>
+          )}
+        </div>
+      </div>
+      {owner && <span style={{ fontSize: 11, color: "#7BA7C4" }}>▸ {owner}</span>}
+      {item.notes && (
+        <p style={{ fontSize: 11, color: "#6A90B0", lineHeight: 1.45, fontStyle: "italic" }}>
+          {t.notes}: {truncate(item.notes, 100)}
+        </p>
+      )}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 2 }}>
+        {item.tags.map(tag => {
+          const cat = CATS.find(c => c.id === tag);
+          if (!cat) return null;
+          return (
+            <span key={tag} style={{ fontSize: 10, padding: "1px 7px", borderRadius: 10, background: `${cat.color}18`, color: cat.color, fontWeight: 500 }}>
+              {lang === "no" ? cat.no : cat.en}
+            </span>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: "auto", paddingTop: 4 }}>
+        {item.url && (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 11, color, textDecoration: "none", padding: "4px 10px", borderRadius: 6, background: `${color}15`, fontWeight: 500, display: "inline-block" }}
+            onMouseEnter={e => e.currentTarget.style.background = `${color}30`}
+            onMouseLeave={e => e.currentTarget.style.background = `${color}15`}
+          >
+            {t.catalog}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
