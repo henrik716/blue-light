@@ -85,6 +85,11 @@ export function DatasetCard({ item, lang, color }) {
         </div>
       </div>
       {owner && <span style={{ fontSize: 11, color: "#7BA7C4" }}>▸ {owner}</span>}
+      {(lang === "no" ? item.abstractNo : item.abstractEn) && (
+        <p style={{ fontSize: 11, color: "#8AACCA", lineHeight: 1.5, margin: "6px 0 0" }}>
+          {truncate(lang === "no" ? item.abstractNo : item.abstractEn, 150)}
+        </p>
+      )}
       {item.notes && (
         <p style={{ fontSize: 11, color: "#6A90B0", lineHeight: 1.45, fontStyle: "italic" }}>
           {t.notes}: {truncate(item.notes, 100)}

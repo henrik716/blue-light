@@ -43,7 +43,9 @@ export default function App() {
         d.en?.toLowerCase().includes(q) ||
         d.ownerNo?.toLowerCase().includes(q) ||
         d.ownerEn?.toLowerCase().includes(q) ||
-        d.notes?.toLowerCase().includes(q)
+        d.notes?.toLowerCase().includes(q) ||
+        d.abstractNo?.toLowerCase().includes(q) ||
+        d.abstractEn?.toLowerCase().includes(q)
       );
     }
     return list;
