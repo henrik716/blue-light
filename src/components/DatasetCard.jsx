@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { CATS } from '../data/categories.js';
 import { T } from '../i18n/translations.js';
 
@@ -12,6 +13,9 @@ export function DatasetCard({ item, lang, color }) {
   const title = lang === "no" ? item.no : item.en;
   const owner = lang === "no" ? item.ownerNo : item.ownerEn;
   const [copied, setCopied] = React.useState(false);
+  const [showAbstractTooltip, setShowAbstractTooltip] = React.useState(false);
+  const [tooltipPos, setTooltipPos] = React.useState(null);
+  const abstractRef = React.useRef(null);
 
   const copyWmsUrl = () => {
     if (item.wmsUrl) {
@@ -44,7 +48,7 @@ export function DatasetCard({ item, lang, color }) {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <h3 style={{ fontFamily: "Syne,sans-serif", fontSize: 13, fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3, flex: 1 }}>
+        <h3 style={{ fontFamily: "Syne,sans-serif", fontSize: 13, fontWeight: 700, color: "#E8F4FF", lineHeight: 1.3, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {title}
         </h3>
         <div style={{ display: "flex", gap: 4, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -84,11 +88,56 @@ export function DatasetCard({ item, lang, color }) {
           )}
         </div>
       </div>
-      {owner && <span style={{ fontSize: 11, color: "#7BA7C4" }}>▸ {owner}</span>}
+      {owner && <span style={{ fontSize: 11, color: "#7BA7C4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>▸ {owner}</span>}
       {(lang === "no" ? item.abstractNo : item.abstractEn) && (
-        <p style={{ fontSize: 11, color: "#8AACCA", lineHeight: 1.5, margin: "6px 0 0" }}>
-          {truncate(lang === "no" ? item.abstractNo : item.abstractEn, 150)}
-        </p>
+        <div style={{ position: "relative", overflow: "visible" }}>
+          <p
+            ref={abstractRef}
+            style={{ fontSize: 11, color: "#8AACCA", lineHeight: 1.5, margin: "6px 0 0", cursor: "help" }}
+            onMouseEnter={() => {
+              if (abstractRef.current) {
+                const rect = abstractRef.current.getBoundingClientRect();
+                setTooltipPos({
+                  top: rect.bottom + 6,
+                  left: rect.left,
+                });
+              }
+              setShowAbstractTooltip(true);
+            }}
+            onMouseLeave={() => setShowAbstractTooltip(false)}
+          >
+            {truncate(lang === "no" ? item.abstractNo : item.abstractEn, 150)}
+          </p>
+          {showAbstractTooltip && tooltipPos && createPortal(
+            <div
+              style={{
+                position: "fixed",
+                top: `${tooltipPos.top}px`,
+                left: `${tooltipPos.left}px`,
+                background: "#030D1A",
+                border: "1px solid rgba(139, 172, 202, 0.4)",
+                borderRadius: 8,
+                padding: "12px 14px",
+                maxWidth: 320,
+                maxHeight: "60vh",
+                overflow: "auto",
+                fontSize: 11,
+                color: "#8AACCA",
+                lineHeight: 1.6,
+                zIndex: 10000,
+                boxShadow: "0 12px 40px rgba(0, 0, 0, 0.8), 0 0 2px rgba(139, 172, 202, 0.3)",
+                animation: "tooltipSlideIn 0.15s ease-out forwards",
+                pointerEvents: "auto",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+              }}
+              onMouseLeave={() => setShowAbstractTooltip(false)}
+            >
+              {lang === "no" ? item.abstractNo : item.abstractEn}
+            </div>,
+            document.body
+          )}
+        </div>
       )}
       {item.notes && (
         <p style={{ fontSize: 11, color: "#6A90B0", lineHeight: 1.45, fontStyle: "italic" }}>

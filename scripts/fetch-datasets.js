@@ -94,8 +94,8 @@ async function fetchOne(seed, index) {
       wmsUrl: wmsUrl || '',
       notes: seed.notes,
       tags: seed.tags,
-      abstractNo: (d.Abstract ?? '').trim().slice(0, 500),
-      abstractEn: ((d.EnglishAbstract ?? '').trim() || (d.Abstract ?? '').trim()).slice(0, 500),
+      abstractNo: (d.Abstract ?? '').trim(),
+      abstractEn: ((d.EnglishAbstract ?? '').trim() || (d.Abstract ?? '').trim()),
     };
   } catch (e) {
     console.warn(`⚠ [${index + 1}/${DATASET_SEEDS.length}] Failed UUID ${seed.uuid}: ${e.message} — using fallback`);
