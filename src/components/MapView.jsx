@@ -58,14 +58,16 @@ function LegendImage({ url }) {
 }
 
 export function MapView({ activeCat, lang, t, search = "" }) {
-  const [visibleLayers, setVisibleLayers] = useState(new Set());
+  const [visibleLayers, setVisibleLayers] = useState(new Map());
   const [panelExpanded, setPanelExpanded] = useState(window.innerWidth > 640);
   const [wmsLayers, setWmsLayers] = useState({});
   const [validWmsIndices, setValidWmsIndices] = useState(new Set());
   const [isValidating, setIsValidating] = useState(false);
   const [expandedLegends, setExpandedLegends] = useState(new Set());
+  const [expandedServices, setExpandedServices] = useState(new Set());
   const mapRef = useRef(null);
   const wmsLayersRef = useRef({});
+  const wmsParamsRef = useRef({});
 
   // Filter datasets by active category and those with WMS
   const wmsDatasets = useMemo(() => {
@@ -75,23 +77,46 @@ export function MapView({ activeCat, lang, t, search = "" }) {
 
   // Clear visible layers when category changes
   useEffect(() => {
-    setVisibleLayers(new Set());
+    setVisibleLayers(new Map());
+    setExpandedServices(new Set());
   }, [activeCat]);
 
-  const toggleLayer = (index) => {
-    const newVisible = new Set(visibleLayers);
-    if (newVisible.has(index)) {
-      newVisible.delete(index);
-      // Also collapse the legend when layer is turned off
-      setExpandedLegends(prev => {
-        const n = new Set(prev);
-        n.delete(index);
-        return n;
-      });
-    } else {
-      newVisible.add(index);
-    }
-    setVisibleLayers(newVisible);
+  const toggleService = (idx) => {
+    const allNames = wmsLayers[idx]?.layers.map(l => l.name) ?? [];
+    setVisibleLayers(prev => {
+      const next = new Map(prev);
+      const isFull = next.get(idx)?.size === allNames.length && allNames.length > 0;
+      if (isFull) {
+        next.delete(idx);
+        setExpandedLegends(p => { const n = new Set(p); n.delete(idx); return n; });
+      } else {
+        next.set(idx, new Set(allNames));
+      }
+      return next;
+    });
+  };
+
+  const toggleSubLayer = (idx, name) => {
+    setVisibleLayers(prev => {
+      const next = new Map(prev);
+      const current = new Set(next.get(idx) ?? []);
+      current.has(name) ? current.delete(name) : current.add(name);
+      if (current.size === 0) {
+        next.delete(idx);
+        setExpandedLegends(p => { const n = new Set(p); n.delete(idx); return n; });
+      } else {
+        next.set(idx, current);
+      }
+      return next;
+    });
+  };
+
+  const toggleExpanded = (idx) => {
+    setExpandedServices(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
   };
 
   const toggleLegend = (index) => {
@@ -101,6 +126,11 @@ export function MapView({ activeCat, lang, t, search = "" }) {
       return next;
     });
   };
+
+  // Helper predicates
+  const isServiceOn = (idx) => (visibleLayers.get(idx)?.size ?? 0) > 0;
+  const isServiceFull = (idx) => visibleLayers.get(idx)?.size === wmsLayers[idx]?.layers.length;
+  const isLayerOn = (idx, name) => visibleLayers.get(idx)?.has(name) ?? false;
 
   const getWmsBaseUrl = (url) => {
     if (!url) return "";
@@ -136,25 +166,30 @@ export function MapView({ activeCat, lang, t, search = "" }) {
           const parser = new DOMParser();
           const xml = parser.parseFromString(text, 'application/xml');
 
-          // Get the first available layer name
-          const allLayers = xml.querySelectorAll('Layer > Name, Layer Name');
-          let firstName = '';
+          // Parse all named layers (skip container layers without a direct <Name>)
+          const layerEls = Array.from(xml.querySelectorAll('Layer')).filter(el =>
+            Array.from(el.children).some(c => c.tagName === 'Name' && c.textContent.trim())
+          );
+
+          const parsedLayers = layerEls.map(el => {
+            const nameEl = Array.from(el.children).find(c => c.tagName === 'Name');
+            const name = nameEl?.textContent.trim() || '';
+            const titleEl = Array.from(el.children).find(c => c.tagName === 'Title');
+            const title = titleEl?.textContent.trim() || name;
+            const legendUrl = `${baseUrl}?service=WMS&request=GetLegendGraphic&version=1.1.0&layer=${encodeURIComponent(name)}&format=image/png`;
+            return { name, title, legendUrl };
+          });
+
+          const allLayers = parsedLayers.length > 0
+            ? parsedLayers
+            : [{ name: dataset.no || `layer_${i}`, title: dataset.no || `layer_${i}`, legendUrl: '' }];
 
           if (allLayers.length > 0) {
-            firstName = allLayers[0].textContent?.trim() || '';
-          }
-
-          if (!firstName) {
-            firstName = dataset.no || `layer_${i}`;
-          }
-
-          if (firstName && firstName.length > 0) {
             validIndices.add(i);
-            const legendUrl = `${baseUrl}?service=WMS&request=GetLegendGraphic&version=1.1.0&layer=${encodeURIComponent(firstName)}&format=image/png`;
-            layers[i] = { name: firstName, legendUrl };
+            layers[i] = { layers: allLayers };
 
             // Update state immediately so layer appears in list
-            setWmsLayers(prev => ({ ...prev, [i]: { name: firstName, legendUrl } }));
+            setWmsLayers(prev => ({ ...prev, [i]: { layers: allLayers } }));
             setValidWmsIndices(prev => new Set([...prev, i]));
           }
         } catch (error) {
@@ -226,33 +261,41 @@ export function MapView({ activeCat, lang, t, search = "" }) {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove layers that are no longer visible
-    Object.keys(wmsLayersRef.current).forEach(index => {
-      const idx = parseInt(index);
-      if (!visibleLayers.has(idx)) {
+    // Remove layers no longer active
+    Object.keys(wmsLayersRef.current).forEach(key => {
+      const idx = parseInt(key);
+      if (!isServiceOn(idx)) {
         map.removeLayer(wmsLayersRef.current[idx]);
         delete wmsLayersRef.current[idx];
+        delete wmsParamsRef.current[idx];
       }
     });
 
-    // Add layers that are newly visible
-    visibleLayers.forEach(index => {
-      if (!wmsLayersRef.current[index]) {
-        const dataset = wmsDatasets[index];
-        const layerName = wmsLayers[index]?.name;
+    // Add or update active service layers
+    visibleLayers.forEach((activeNames, idx) => {
+      const dataset = wmsDatasets[idx];
+      const baseUrl = getWmsBaseUrl(dataset?.wmsUrl);
+      const layersParam = [...activeNames].join(',');
+      if (!layersParam || !dataset) return;
 
-        if (dataset && dataset.wmsUrl && layerName) {
-          const baseUrl = getWmsBaseUrl(dataset.wmsUrl);
-          const layer = L.tileLayer.wms(baseUrl, {
-            layers: layerName,
-            transparent: true,
-            version: '1.1.0',
-            format: 'image/png',
-            opacity: 0.7,
-          });
-          layer.addTo(map);
-          wmsLayersRef.current[index] = layer;
+      const prevParams = wmsParamsRef.current[idx];
+
+      // Only recreate layer if params changed
+      if (prevParams !== layersParam) {
+        if (wmsLayersRef.current[idx]) {
+          map.removeLayer(wmsLayersRef.current[idx]);
         }
+
+        const layer = L.tileLayer.wms(baseUrl, {
+          layers: layersParam,
+          transparent: true,
+          version: '1.1.0',
+          format: 'image/png',
+          opacity: 0.7,
+        });
+        layer.addTo(map);
+        wmsLayersRef.current[idx] = layer;
+        wmsParamsRef.current[idx] = layersParam;
       }
     });
   }, [visibleLayers, wmsDatasets, wmsLayers]);
@@ -350,22 +393,30 @@ export function MapView({ activeCat, lang, t, search = "" }) {
             ) : (
               validWmsDatasets.map(({ index: originalIndex, dataset }) => {
                 const catColor = CATS.find(c => c.id === dataset.tags?.[0])?.color || accentColor;
-                const isVisible = visibleLayers.has(originalIndex);
-                const { name: layerName, legendUrl } = wmsLayers[originalIndex] ?? {};
+                const serviceLayers = wmsLayers[originalIndex]?.layers ?? [];
+                const isMulti = serviceLayers.length > 1;
+                const isOn = isServiceOn(originalIndex);
+                const isFull = isServiceFull(originalIndex);
+                const activeLayers = visibleLayers.get(originalIndex) ?? new Set();
+                const firstActive = serviceLayers.find(l => activeLayers.has(l.name));
+                const legendUrl = firstActive?.legendUrl ?? null;
+                const isExpanded = expandedServices.has(originalIndex);
                 const isLegendExpanded = expandedLegends.has(originalIndex);
+
+                // Indicator
+                const indicator = !isOn ? "○" : isFull ? "◉" : "◎";
+                const indicatorColor = !isOn ? "#3A6080" : "#60A5FA";
 
                 return (
                   <div
                     key={`layer-${originalIndex}`}
                     style={{
                       borderLeft: `3px solid ${catColor}`,
-                      background: isVisible ? "rgba(96, 165, 250, 0.1)" : "transparent",
-                      transition: "background 0.15s",
                     }}
                   >
-                    {/* Layer Entry */}
+                    {/* Service Header Row */}
                     <div
-                      onClick={() => toggleLayer(originalIndex)}
+                      onClick={() => toggleService(originalIndex)}
                       style={{
                         padding: "10px 12px",
                         cursor: "pointer",
@@ -374,12 +425,14 @@ export function MapView({ activeCat, lang, t, search = "" }) {
                         alignItems: "center",
                         gap: 8,
                         justifyContent: "space-between",
+                        background: isOn ? "rgba(96, 165, 250, 0.1)" : "transparent",
+                        transition: "background 0.15s",
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.background = isVisible ? "rgba(96, 165, 250, 0.15)" : "rgba(255, 255, 255, 0.05)";
+                        e.currentTarget.style.background = isOn ? "rgba(96, 165, 250, 0.15)" : "rgba(255, 255, 255, 0.05)";
                       }}
                       onMouseLeave={e => {
-                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.background = isOn ? "rgba(96, 165, 250, 0.1)" : "transparent";
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -415,7 +468,7 @@ export function MapView({ activeCat, lang, t, search = "" }) {
                           flexShrink: 0,
                         }}
                       >
-                        {isVisible && legendUrl && (
+                        {isOn && legendUrl && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -435,20 +488,87 @@ export function MapView({ activeCat, lang, t, search = "" }) {
                             ≡
                           </button>
                         )}
+                        {isMulti && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpanded(originalIndex);
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              fontSize: 10,
+                              color: "#60A5FA",
+                              padding: "0 4px",
+                              flexShrink: 0,
+                            }}
+                            title="Toggle sublayers"
+                          >
+                            {isExpanded ? "▼" : "▶"}
+                          </button>
+                        )}
                         <div
                           style={{
                             fontSize: 14,
-                            color: isVisible ? "#60A5FA" : "#3A6080",
+                            color: indicatorColor,
                             flexShrink: 0,
                           }}
                         >
-                          {isVisible ? "◉" : "○"}
+                          {indicator}
                         </div>
                       </div>
                     </div>
 
+                    {/* Sublayer List */}
+                    {isMulti && isExpanded && (
+                      <div style={{ paddingLeft: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        {serviceLayers.map(layer => (
+                          <div
+                            key={layer.name}
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleSubLayer(originalIndex, layer.name);
+                            }}
+                            style={{
+                              padding: "6px 12px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              borderBottom: "1px solid rgba(255,255,255,0.02)",
+                            }}
+                            onMouseEnter={e => {
+                              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
+                            }}
+                            onMouseLeave={e => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isLayerOn(originalIndex, layer.name)}
+                              readOnly
+                              style={{ pointerEvents: "none", cursor: "pointer" }}
+                            />
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "#C0D8F0",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {layer.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Legend - Show only if layer is visible, legend exists, and is expanded */}
-                    {isVisible && legendUrl && isLegendExpanded && (
+                    {isOn && legendUrl && isLegendExpanded && (
                       <LegendImage url={legendUrl} />
                     )}
                   </div>
